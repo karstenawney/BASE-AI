@@ -1,24 +1,27 @@
 import ai
 from tqdm import tqdm
 
+
 def reward(model):
-    # Insert reward function here
+    # Example reward function here
     # This will define what the AI will do
     # This must return a higher number for good behavior (can be negative)
     # Try to make the reward module's return as stable as possible, maybe implementing monte-carlo simulation
+    # Use ai.run(inputs, model)
     return 0
 
-def train(input_len: int, output_len: int, hidden_layers: list[int], generations: int, population: int, carry: float, startmodel = None):
+def train(reward: function, generations: int, population: int, carry: float, startmodel = None, input_len: int = None, output_len: int = None, hidden_layers: list[int] = None):
     """
     Trains a neural network model.
-    
-    :param input_len: Number of input features
-    :param output_len: Number of output features
-    :param hidden_layers: List containing node counts for hidden layers, e.g., [64, 32]
+
+    :param reward: The reward function
     :param generations: Number of generations of models to go through
     :param population: Number of model variations per generation
     :param carry: Fraction of models that make up the parents of the next generation
-    :param model: Optional starting model to begin the training
+    :param startmodel: Optional starting model to begin the training
+    :param input_len: Optional Number of input features
+    :param output_len: Optional Number of output features
+    :param hidden_layers: Optional List containing node counts for hidden layers, e.g., [64, 32]
     :return: A PyTorch nn.Sequential model
     """
 
@@ -45,7 +48,6 @@ def train(input_len: int, output_len: int, hidden_layers: list[int], generations
     print (f"Best Score: {score}")
     return model
 
-
 def generation(models: list, carry):
     num_models = len(models)
     carrynum = int(num_models * carry)
@@ -70,3 +72,26 @@ def generation(models: list, carry):
         if i < overflow:
             newmodels.append(ai.mutate(bestmodels[i]))
     return newmodels
+
+def main():
+    file = input("Do you have a model file (Y/n): ")
+    generations = int(input("Enter number of generations: "))
+    population = int(input("Enter number of AI models per generation: "))
+    carry = float(input("Enter fraction of models that will survive each generation (Ex: 0.1 for 10%): "))
+    if file.lower() == "y":
+        file = input("Enter model path: ")
+        model = ai.load(file)
+        model = train(reward, generations, population, carry, startmodel=model)
+    else:
+        input_len = int(input("Enter number of model inputs: "))
+        output_len = int(input("Enter number of model outputs: "))
+        hidden_layers_num = int(input("Enter number of hidden layers: "))
+        hidden_layers = []
+        for i in range(hidden_layers_num):
+            hidden_layers.append(int(input(f"Enter size of hidden layer {i + 1}")))
+        model = train(reward, generations, population, carry, input_len=input_len, output_len=output_len, hidden_layers=hidden_layers)
+    file = input("Enter model output path: ")
+    ai.save(model, file)
+
+if __name__ == "__main__":
+    main()
