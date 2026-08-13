@@ -1,20 +1,11 @@
 import ai
+import reward
 from tqdm import tqdm
 
-
-def reward(model):
-    # Example reward function here
-    # This will define what the AI will do
-    # This must return a higher number for good behavior (can be negative)
-    # Try to make the reward module's return as stable as possible, maybe implementing monte-carlo simulation
-    # Use ai.run(inputs, model)
-    return 0
-
-def train(reward: function, generations: int, population: int, carry: float, startmodel = None, input_len: int = None, output_len: int = None, hidden_layers: list[int] = None):
+def train(generations: int, population: int, carry: float, startmodel = None, input_len: int = None, output_len: int = None, hidden_layers: list[int] = None):
     """
     Trains a neural network model.
 
-    :param reward: The reward function
     :param generations: Number of generations of models to go through
     :param population: Number of model variations per generation
     :param carry: Fraction of models that make up the parents of the next generation
@@ -41,12 +32,14 @@ def train(reward: function, generations: int, population: int, carry: float, sta
     scores = []
 
     for i in range(population):
-        scores.append(reward(models[i]))
+        scores.append(reward.reward(models[i]))
 
-    score, model = max(zip(scores, models))
+    best_model = max(models, key=lambda m: reward.reward(m))
+    best_score = reward.reward(best_model)
+    
     print ("Training Complete")
-    print (f"Best Score: {score}")
-    return model
+    print (f"Best Score: {best_score}")
+    return best_model
 
 def generation(models: list, carry):
     num_models = len(models)
@@ -54,11 +47,8 @@ def generation(models: list, carry):
     if carrynum == 0:
         raise ValueError(f"Error: carry {carry} is too low for population size {num_models}")
 
-    scores = []
-    for model in models:
-        scores.append(reward(model))
-
-    bestmodels = [model for _, model in sorted(zip(scores, models), reverse=True)[:carrynum]]
+    sorted_models = sorted(models, key=lambda m: reward.reward(m), reverse=True)
+    bestmodels = sorted_models[:carrynum]
 
     new_per_old = num_models // carrynum
     overflow = num_models % carrynum
@@ -81,7 +71,7 @@ def main():
     if file.lower() == "y":
         file = input("Enter model path: ")
         model = ai.load(file)
-        model = train(reward, generations, population, carry, startmodel=model)
+        model = train(generations, population, carry, startmodel=model)
     else:
         input_len = int(input("Enter number of model inputs: "))
         output_len = int(input("Enter number of model outputs: "))
@@ -89,7 +79,7 @@ def main():
         hidden_layers = []
         for i in range(hidden_layers_num):
             hidden_layers.append(int(input(f"Enter size of hidden layer {i + 1}")))
-        model = train(reward, generations, population, carry, input_len=input_len, output_len=output_len, hidden_layers=hidden_layers)
+        model = train(generations, population, carry, input_len=input_len, output_len=output_len, hidden_layers=hidden_layers)
     file = input("Enter model output path: ")
     ai.save(model, file)
 
