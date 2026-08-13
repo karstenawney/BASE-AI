@@ -1,6 +1,7 @@
 import copy
 import torch
 import torch.nn as nn
+import _pickle
 
 # Set device to GPU if available, otherwise CPU
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -93,7 +94,10 @@ def load(file_path: str) -> nn.Module:
     :param file_path: Path to saved model file
     :return: Loaded PyTorch model
     """
-    model = torch.load(file_path, weights_only=False)
+    try:
+        model = torch.load(file_path, weights_only=False)
+    except _pickle.UnpicklingError:
+        raise ValueError(f"Failed to load model from {file_path}. The file may be corrupted or not a valid PyTorch model.")
     model.to(device)
     model.eval()
     return model
