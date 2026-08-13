@@ -1,6 +1,0 @@
-{
-  "dependencies": {
-    "tqdm": "github:tqdm/tqdm",
-    "pytorch": "github:pytorch/pytorch"
-  }
-}
