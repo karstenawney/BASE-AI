@@ -1,5 +1,4 @@
 import ai
-import sys
 from tqdm import tqdm
 
 def reward(model):
@@ -36,21 +35,28 @@ def train(input_len: int, output_len: int, hidden_layers: list[int], generations
     for i in tqdm(range(generations), desc="Training model"):
         models = generation(models, carry)
 
+    scores = []
 
+    for i in range(population):
+        scores.append(reward(models[i]))
 
+    score, model = max(zip(scores, models))
+    print ("Training Complete")
+    print (f"Best Score: {score}")
+    return model
 
 
 def generation(models: list, carry):
     num_models = len(models)
     carrynum = int(num_models * carry)
     if carrynum == 0:
-        sys.exit(f"Error: carry {carry} is too low for population size {num_models}")
+        raise ValueError(f"Error: carry {carry} is too low for population size {num_models}")
 
     scores = []
     for model in models:
         scores.append(reward(model))
 
-    bestmodels = [data for _, data in sorted(zip(scores, models), reverse=True)[:carrynum]]
+    bestmodels = [model for _, model in sorted(zip(scores, models), reverse=True)[:carrynum]]
 
     new_per_old = num_models // carrynum
     overflow = num_models % carrynum
