@@ -78,7 +78,7 @@ def main():
         hidden_layers_num = int(input("Enter number of hidden layers: "))
         hidden_layers = []
         for i in range(hidden_layers_num):
-            hidden_layers.append(int(input(f"Enter size of hidden layer {i + 1}")))
+            hidden_layers.append(int(input(f"Enter size of hidden layer {i + 1}: ")))
         model = train(generations, population, carry, input_len=input_len, output_len=output_len, hidden_layers=hidden_layers)
     file = input("Enter model output path: ")
     ai.save(model, file)
