@@ -3,64 +3,45 @@ import random
 from ai import run
 
 
-def one_hot_encode(sequence):
-    """Converts a list of integer character indices (0-26) into a flattened one-hot list of length 270."""
+def encode(sequence: list[int]) -> list[float]:
+    """Converts a list of integer character indices (0-26) into a flattened one-hot list of length 27 * len(sequence)."""
     encoded = []
     for char_idx in sequence:
         vec = [0.0] * 27
         # Clamp index safely between 0 and 26
         safe_idx = max(0, min(26, int(char_idx)))
         vec[safe_idx] = 1.0
-        encoded.extend(vec)
+        encoded += vec
     return encoded
 
 
-def softmax(logits):
-    """Computes softmax probabilities from raw model output logits."""
-    max_logit = max(logits)
-    exps = [math.exp(x - max_logit) for x in logits]
-    sum_exps = sum(exps)
-    return [e / sum_exps for e in exps]
-
+def difference(vec1: list[float], vec2: list[float]) -> float:
+    """Computes difference between two characters."""
+    return -sum(abs(num1 - num2) for num1, num2 in zip(vec1, vec2))
 
 def reward(model):
-
-    NUM_SAMPLES = 50
+    NUM_SAMPLES = 10
     score = 0.0
 
-    text = [19, 7, 8, 18, 26, 8, 18, 26, 5, 17, 4, 4, 26, 0, 13, 3, 26, 20, 13, 4, 13, 2, 20, 12, 1, 4, 17, 4, 3, 26, 18, 14, 5, 19, 22, 0, 17, 4, 26, 17, 4, 11, 4, 0, 18, 4, 3, 26, 8, 13, 19, 14, 26, 19, 7, 4, 26, 15, 20, 1, 11, 8, 2, 26, 3, 14, 12, 0, 8, 13, 0, 13, 24, 14, 13, 4, 26, 8, 18, 26, 5, 17, 4, 4, 26, 19, 14, 26, 2, 14, 15, 24, 26, 12, 14, 3, 8, 5, 24, 26, 15, 20, 1, 11, 8, 18, 7, 26, 20, 18, 4, 26, 2, 14, 12, 15, 8, 11, 4, 26, 18, 4, 11, 11, 26, 14, 17, 3, 8, 18, 19, 17, 8, 1, 20, 19, 4, 26, 19, 7, 8, 18, 26, 18, 14, 5, 19, 22, 0, 17, 4, 26, 4, 8, 19, 7, 4, 17, 26, 8, 13, 26, 18, 14, 20, 17, 2, 4, 26, 2, 14, 3, 4, 26, 5, 14, 17, 12, 26, 14, 17, 26, 0, 18, 26, 0, 26, 2, 14, 12, 15, 8, 11, 4, 3, 1, 8, 13, 0, 17, 24, 26, 5, 14, 17, 26,0, 13, 24, 26, 15, 20, 17, 15, 14, 18, 4, 26, 2, 14, 12, 12, 4, 17, 2, 8, 0, 11, 26, 14, 17, 26, 13, 14, 13, 2, 14, 12, 12, 4, 17, 2, 8, 0, 11, 26,0, 13, 3, 26, 1, 24, 26, 0, 13, 24, 12, 4, 0, 13, 18, 8, 13, 26, 9, 20, 17, 8, 18, 3, 8, 2, 19, 8, 14, 13, 18, 26, 19, 7, 0, 19, 26, 17, 4, 2, 14, 6, 13, 8, 25, 4, 26, 2, 14, 15, 24, 17, 8, 6, 7, 19, 26, 11, 0, 22, 18, 26, 19, 7, 4, 26, 0, 20, 19, 7, 14, 17, 26, 14, 17, 26, 0, 20, 19, 7, 14, 17, 18, 14, 5, 26, 19, 7, 8, 18, 26, 18, 14, 5, 19, 22, 0, 17, 4, 26, 3, 4, 3, 8, 2, 0, 19, 4, 26, 0, 13, 24, 26, 0, 13, 3, 26, 0, 11, 11, 26, 2, 14, 15,24, 17, 8, 6, 7, 19, 26, 8, 13, 19, 4, 17, 4, 18, 19, 26, 8, 13, 26, 19, 7, 4, 18, 14, 5, 19, 22, 0, 17, 4, 26, 19, 14, 26, 19, 7, 4, 26, 15, 20, 1,11, 8, 2, 26, 3, 14, 12, 0, 8, 13, 26, 22, 4, 26, 12, 0, 10, 4, 26, 19, 7, 8, 18, 26, 3, 4, 3, 8, 2, 0, 19, 8, 14, 13, 5, 14, 17, 26, 19, 7, 4, 26, 1, 4, 13, 4, 5, 8, 19, 14, 5, 26, 19, 7, 4, 26, 15, 20, 1, 11, 8, 2, 26, 0, 19, 26, 11, 0, 17, 6, 4, 26, 0, 13, 3, 26, 19, 14, 26, 19, 7, 4, 26, 3, 4, 19, 17, 8, 12, 4, 13, 19, 26, 14, 5, 26, 14, 20, 17, 26, 7, 4, 8, 17, 18, 26, 0, 13, 3, 18, 20, 2, 2, 4, 18, 18, 14, 17, 18, 26, 22, 4, 26, 8, 13, 19, 4, 13, 3, 26, 19, 7, 8, 18, 26, 3, 4, 3, 8, 2, 0, 19, 8, 14, 13, 26, 19, 14, 26, 1, 4, 26, 0, 13, 26, 14, 21, 4, 17, 19, 26, 0, 2, 19, 26, 14, 5,17, 4, 11, 8, 13, 16, 20, 8, 18, 7, 12, 4, 13, 19, 26, 8, 13, 26, 15, 4, 17, 15, 4, 19, 20, 8, 19, 24, 26, 14, 5, 26, 0, 11, 11, 26, 15, 17, 4, 18, 4, 13, 19, 26, 0, 13, 3, 26, 5, 20, 19, 20, 17, 4, 26, 17, 8, 6, 7, 19, 18, 26, 19, 14, 26, 19, 7, 8, 18, 18, 14, 5, 19, 22, 0, 17, 4, 26, 20, 13, 3,4, 17, 26, 2, 14, 15, 24, 17, 8, 6, 7, 19, 26, 11, 0, 22, 19, 7, 4, 26, 18, 14, 5, 19, 22, 0, 17, 4, 26, 8, 18, 26, 15, 17, 14, 21, 8, 3, 4, 3, 26, 0, 18, 26, 8, 18, 26, 22, 8, 19, 7, 14, 20, 19, 26, 22, 0, 17, 17, 0, 13, 19, 24, 26, 14, 5, 26, 0, 13, 24, 26, 10, 8, 13, 3, 4, 23, 15, 17, 4, 18, 18, 26, 14, 17, 26, 8, 12, 15, 11, 8, 4, 3, 26, 8, 13, 2, 11, 20, 3, 8, 13, 6, 26, 1, 20, 19, 26, 13, 14, 19, 26, 11, 8, 12, 8, 19, 4, 3, 26, 19, 14, 26, 19, 7, 4, 26, 22, 0, 17, 17, 0, 13, 19, 8, 4, 18, 26, 14, 5, 12, 4, 17, 2, 7, 0, 13, 19, 0, 1, 8, 11, 8, 19, 24, 26, 5, 8, 19, 13, 4, 18, 18, 26,5, 14, 17, 26, 0, 26, 15, 0, 17, 19, 8, 2, 20, 11, 0, 17, 26, 15, 20, 17, 15, 14, 18, 4, 26, 0, 13, 3, 26, 13, 14, 13, 8, 13, 5, 17, 8, 13, 6, 4, 12, 4, 13, 19, 8, 13, 26, 13, 14, 26, 4, 21, 4, 13, 19, 26, 18, 7, 0, 11, 11, 26, 19, 7, 4, 26, 0, 20, 19, 7, 14, 17, 18, 26, 1, 4, 26, 11, 8, 0, 1, 11, 4, 26, 5, 14, 17, 26, 0, 13, 24, 26, 2, 11, 0, 8, 12, 26, 3, 0, 12, 0, 6, 4, 18, 26, 14, 17, 14, 19, 7, 4, 17, 26, 11, 8, 0, 1, 8, 11, 8, 19, 24, 26, 22, 7, 4, 19, 7, 4, 17, 26, 8, 13, 26, 0, 13, 26, 0, 2, 19, 8, 14, 13, 26, 14, 5, 26, 2, 14, 13, 19, 17, 0, 2, 19, 26, 19, 14, 17, 19, 26, 14, 17,26, 14, 19, 7, 4, 17, 22, 8, 18, 4, 0, 17, 8, 18, 8, 13, 6, 26, 5, 17, 14, 12, 26, 14, 20, 19, 26, 14, 5, 26, 14, 17, 26, 8, 13, 26, 2, 14, 13, 13, 4, 2, 19, 8, 14, 13, 26, 22, 8, 19, 7, 26, 19, 7, 4, 26, 18, 14, 5, 19, 22, 0, 17, 4, 26, 14, 17, 26, 19, 7, 4, 26, 20, 18, 4, 26, 14, 17, 14, 19, 7,4, 17, 26, 3, 4, 0, 11, 8, 13, 6, 18, 26, 8, 13, 26, 19, 7, 4, 26, 18, 14, 5, 19, 22, 0, 17, 4]
+    text = [0, 11, 15, 7, 0, 1, 4, 19, 26, 26, 26, 26, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 26]
 
     for _ in range(NUM_SAMPLES):
         start = random.randint(0, len(text) - 11)
         raw_inputs = text[start : start + 10]
-        target_char = text[start + 10]
+        target_char = text[start + 10]  # Single target integer index
 
-        # Convert context window to one-hot vector (270 inputs)
-        inputs = one_hot_encode(raw_inputs)
+        inputs = encode(raw_inputs)
+        logits = run(inputs, model)
 
-        # Run model (outputs 27 logits as a PyTorch Tensor)
-        logits_tensor = run(inputs, model)
-
-        # Convert Tensor to a standard Python list
-        logits = (
-            logits_tensor.tolist()
-            if hasattr(logits_tensor, "tolist")
-            else logits_tensor
-        )
-
-        # Convert outputs to class probabilities
-        probs = softmax(logits)
-
-        # Log likelihood reward for the true character class
-        target_prob = max(probs[target_char], 1e-7)
-        score += math.log(target_prob)
-
-        # Exact match bonus
+        # Pick highest-scoring index from output logits
         predicted_char = logits.index(max(logits))
+
+        # Reward +1.0 for correct prediction, 0.0 for wrong prediction
         if predicted_char == target_char:
             score += 1.0
-        elif predicted_char == 26 and target_char != 26:
-            # Small penalty if model lazily guesses space when it shouldn't
-            score -= 0.5
+        if predicted_char == 26 and target_char != 26:
+            score -= 1.0
+        if predicted_char == 26 and target_char == 26:
+            score += 10.0
 
     return score / NUM_SAMPLES

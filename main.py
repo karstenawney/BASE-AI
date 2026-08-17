@@ -1,7 +1,11 @@
+print ("Compiling Helper Functions...")
+import sys
 import ai
 import reward
-from tqdm import tqdm
-
+try:
+    from tqdm import tqdm
+except (ImportError):
+    sys.exit("Please install dependancy: tqdm (pip install tqdm)")
 def train(generations: int, population: int, carry: float, startmodel = None, input_len: int = None, output_len: int = None, hidden_layers: list[int] = None):
     """
     Trains a neural network model.
@@ -26,8 +30,11 @@ def train(generations: int, population: int, carry: float, startmodel = None, in
         for i in range(population):
             models.append(ai.mutate(startmodel))
 
-    for i in tqdm(range(generations), desc="Training model"):
+    pbar = tqdm(range(generations))
+
+    for i in pbar:
         models = generation(models, carry)
+        pbar.set_description(f"Training... Loss: {reward.reward(models[0])}")
 
     scores = []
 
@@ -67,7 +74,7 @@ def main():
     file = input("Do you have a model file (Y/n): ")
     generations = int(input("Enter number of generations: "))
     population = int(input("Enter number of AI models per generation: "))
-    carry = float(input("Enter fraction of models that will survive each generation (Ex: 0.1 for 10%): "))
+    carry = float(input("Enter fraction of models that will survive each generation \n(Ex: 0.1 for 10%): "))
     if file.lower() == "y":
         file = input("Enter model path: ")
         model = ai.load(file)

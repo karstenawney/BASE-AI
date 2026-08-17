@@ -1,5 +1,9 @@
 import copy
-import torch
+import sys
+try:
+    import torch
+except (ImportError):
+    sys.exit("Please install dependancy: pytorch (pip install pytorch)")
 import torch.nn as nn
 import _pickle
 
@@ -55,7 +59,7 @@ def mutate(model: nn.Module, mutation_rate: float = 0.1, mutation_power: float =
     return mutated_model
 
 
-def run(inputs: list[float] | torch.Tensor, model: nn.Module) -> torch.Tensor:
+def run(inputs: list[float] | torch.Tensor, model: nn.Module) -> list[float]:
     """
     Runs an input vector through the model and returns the output tensor.
     
@@ -74,7 +78,7 @@ def run(inputs: list[float] | torch.Tensor, model: nn.Module) -> torch.Tensor:
             inputs = inputs.unsqueeze(0)
             
         output = model(inputs)
-        return output.squeeze(0)  # Return single dimension if single input batch
+        return output.squeeze(0).tolist()  # Return single dimension if single input batch
 
 
 def save(model: nn.Module, file_path: str) -> None:
