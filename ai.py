@@ -100,8 +100,8 @@ def load(file_path: str) -> nn.Module:
     """
     try:
         model = torch.load(file_path, weights_only=False)
-    except _pickle.UnpicklingError:
-        raise ValueError(f"Failed to load model from {file_path}. The file may be corrupted or not a valid PyTorch model.")
+    except (_pickle.UnpicklingError, RuntimeError, AttributeError, ModuleNotFoundError, EOFError) as e:
+        raise ValueError(f"Failed to load model from {file_path}. The file may be corrupted or not a valid PyTorch model.") from e
     model.to(device)
     model.eval()
     return model

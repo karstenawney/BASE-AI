@@ -34,16 +34,13 @@ def train(generations: int, population: int, carry: float, startmodel = None, in
 
     for i in pbar:
         models = generation(models, carry)
-        pbar.set_description(f"Training... Loss: {reward.reward(models[0])}")
+        pbar.set_description(f"Training... Reward: {reward.reward(models[0])}")
 
-    scores = []
+    scores = [reward.reward(m) for m in models]
+    best_idx = max(range(len(models)), key=lambda i: scores[i])
+    best_model = models[best_idx]
+    best_score = scores[best_idx]
 
-    for i in range(population):
-        scores.append(reward.reward(models[i]))
-
-    best_model = max(models, key=lambda m: reward.reward(m))
-    best_score = reward.reward(best_model)
-    
     print ("Training Complete")
     print (f"Best Score: {best_score}")
     return best_model

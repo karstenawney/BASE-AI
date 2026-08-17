@@ -41,7 +41,5 @@ def reward(model):
             score += 1.0
         if predicted_char == 26 and target_char != 26:
             score -= 1.0
-        if predicted_char == 26 and target_char == 26:
-            score += 10.0
 
     return score / NUM_SAMPLES
