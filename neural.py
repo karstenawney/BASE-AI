@@ -3,6 +3,8 @@
 model = [[[1]]]
 modelbias = [[1]]
 activelayer = [1]
+layersizes = [1]
+num_layers = 1
 for layer, biaslayer in zip(model, modelbias):
     newlayer = [0] * len(layer)
     for i, (neuron, b) in enumerate(zip(layer, biaslayer)):
