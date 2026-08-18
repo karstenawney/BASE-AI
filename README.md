@@ -7,6 +7,9 @@ It consists of a backend and a middle end. Will create a front-end, not done yet
 
 I am just starting out on github, so any contribution, constructive feedback, issues, bug-reports, or feature suggestions are welcome. This is my first actual project on github, so I don't really know the community, so any help is welcome. Thanks!!
 
+Please note: The model can only output whole numbers from -32768 to 32767
+
+
 # Goals
 The goals of this project are to make simple machine learning projects more accessable for people. The project is intended to eventually be plug and play, with many different training types available, including pattern recognition, bot dev, NLP, GAN, transformers, diffusion etc. Also include a library of Pre-trained models that can be specialized. 
 
@@ -33,5 +36,4 @@ run(inputs[], model) # returns a list of the models outputs
 save(model, file_path) # saves a model to a file, recommend using .pt for file extension
 
 load(file_path) # returns the model at the path
-
 
