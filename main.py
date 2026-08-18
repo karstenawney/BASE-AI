@@ -45,26 +45,48 @@ def train(generations: int, population: int, carry: float, startmodel = None, in
     print (f"Best Score: {best_score}")
     return best_model
 
-def generation(models: list, carry):
+from concurrent.futures import ProcessPoolExecutor
+
+def generation(models: list, carry: float, max_workers: int = None) -> list:
     num_models = len(models)
     carrynum = int(num_models * carry)
     if carrynum == 0:
         raise ValueError(f"Error: carry {carry} is too low for population size {num_models}")
 
-    sorted_models = sorted(models, key=lambda m: reward.reward(m), reverse=True)
-    bestmodels = sorted_models[:carrynum]
+    # Use ThreadPoolExecutor instead of ProcessPoolExecutor if models cannot be pickled
+    with ProcessPoolExecutor(max_workers=max_workers) as executor:
+        # 1. Parallelize reward calculations
+        rewards = list(executor.map(reward.reward, models))
+        
+        # Sort models based on evaluated rewards
+        sorted_models = [
+            m for m, _ in sorted(zip(models, rewards), key=lambda pair: pair[1], reverse=True)
+        ]
+        bestmodels = sorted_models[:carrynum]
 
-    new_per_old = num_models // carrynum
-    overflow = num_models % carrynum
+        new_per_old = num_models // carrynum
+        overflow = num_models % carrynum
 
+        # 2. Collect all input models needing mutation
+        models_to_mutate = []
+        mutation_counts = []
+        for i in range(carrynum):
+            count = (new_per_old - 1) + (1 if i < overflow else 0)
+            mutation_counts.append(count)
+            models_to_mutate.extend([bestmodels[i]] * count)
+
+        # 3. Parallelize mutation calls
+        mutated_models = list(executor.map(ai.mutate, models_to_mutate))
+
+    # Reconstruct population matching original order
     newmodels = []
-
+    mut_idx = 0
     for i in range(carrynum):
         newmodels.append(bestmodels[i])
-        for j in range(new_per_old - 1):
-            newmodels.append(ai.mutate(bestmodels[i]))
-        if i < overflow:
-            newmodels.append(ai.mutate(bestmodels[i]))
+        count = mutation_counts[i]
+        newmodels.extend(mutated_models[mut_idx : mut_idx + count])
+        mut_idx += count
+
     return newmodels
 
 def main():

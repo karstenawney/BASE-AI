@@ -9,7 +9,7 @@ void layer(
     int output_length
 ) {
     for (int n = 0; n < output_length; n++) {
-        int32_t s = 0;
+        int32_t s = bias[n];
         int weight_offset = input_length * n;
 
         for (int a = 0; a < input_length; a++) {
